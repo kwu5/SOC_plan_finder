@@ -73,21 +73,40 @@ if run:
         x=x,
     )
 
-    st.write(f"Found **{len(combos)}** combinations.")
+    rows = []
+    for c in combos:
+        labels = [f"{plan_name_by_id[p.id]} ({plan_provider[p.id]})" for p in c.plans]
+        rows.append(
+            {
+                "plans": ", ".join(labels),
+                "size": len(c.plans),
+                "total": float(c.total),
+                "overshoot (total - y)": float(c.total - y),
+            }
+        )
+    st.session_state["search_rows"] = rows
 
-    if combos:
-        rows = []
-        for c in combos:
-            labels = [f"{plan_name_by_id[p.id]} ({plan_provider[p.id]})" for p in c.plans]
-            rows.append(
-                {
-                    "plans": ", ".join(labels),
-                    "size": len(c.plans),
-                    "total": float(c.total),
-                    "overshoot (total - y)": float(c.total - y),
-                }
+if "search_rows" in st.session_state:
+    rows = st.session_state["search_rows"]
+    st.write(f"Found **{len(rows)}** combinations.")
+
+    if rows:
+        sort_col, order_col = st.columns([2, 1])
+        with sort_col:
+            sort_by = st.selectbox(
+                "Sort by",
+                options=["overshoot (total - y)", "size", "total"],
+                index=0,
             )
-        df = pd.DataFrame(rows).sort_values("overshoot (total - y)").reset_index(drop=True)
+        with order_col:
+            order = st.radio("Order", ["Ascending", "Descending"], horizontal=True)
+        ascending = order == "Ascending"
+
+        df = (
+            pd.DataFrame(rows)
+            .sort_values(sort_by, ascending=ascending, kind="stable")
+            .reset_index(drop=True)
+        )
         st.dataframe(
             df,
             use_container_width=True,
