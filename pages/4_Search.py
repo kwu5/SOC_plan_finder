@@ -64,6 +64,7 @@ if run:
         plan_name_by_id = {p.id: p.name for p in plans}
         provider_name_by_id = {p.id: p.name for p in providers}
         plan_provider = {p.id: provider_name_by_id[p.provider_id] for p in plans}
+        plan_premium_by_id = {p.id: p.premium for p in plans}
 
     combos = find_combinations(
         plans=search_plans,
@@ -76,12 +77,16 @@ if run:
     rows = []
     for c in combos:
         labels = [f"{plan_name_by_id[p.id]} ({plan_provider[p.id]})" for p in c.plans]
+        text = "".join(
+            f"{plan_provider[p.id]}{plan_premium_by_id[p.id]:.2f}," for p in c.plans
+        )
         rows.append(
             {
                 "plans": ", ".join(labels),
                 "size": len(c.plans),
                 "total": float(c.total),
                 "overshoot (total - y)": float(c.total - y),
+                "text": text,
             }
         )
     st.session_state["search_rows"] = rows
@@ -108,7 +113,7 @@ if "search_rows" in st.session_state:
             .reset_index(drop=True)
         )
         st.dataframe(
-            df,
+            df.drop(columns=["text"]),
             use_container_width=True,
             hide_index=True,
             column_config={
@@ -118,3 +123,6 @@ if "search_rows" in st.session_state:
                 ),
             },
         )
+
+        if st.button("Generate a text"):
+            st.code("\n".join(df["text"]), language=None)
