@@ -77,8 +77,8 @@ if run:
     rows = []
     for c in combos:
         labels = [f"{plan_name_by_id[p.id]} ({plan_provider[p.id]})" for p in c.plans]
-        text = "".join(
-            f"{plan_provider[p.id]}{plan_premium_by_id[p.id]:.2f}," for p in c.plans
+        text = ",".join(
+            f"{plan_provider[p.id]}{plan_premium_by_id[p.id]:.2f}" for p in c.plans
         )
         rows.append(
             {
@@ -112,10 +112,12 @@ if "search_rows" in st.session_state:
             .sort_values(sort_by, ascending=ascending, kind="stable")
             .reset_index(drop=True)
         )
-        st.dataframe(
+        event = st.dataframe(
             df.drop(columns=["text"]),
             use_container_width=True,
             hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row",
             column_config={
                 "total": st.column_config.NumberColumn("total", format="%.2f"),
                 "overshoot (total - y)": st.column_config.NumberColumn(
@@ -124,5 +126,6 @@ if "search_rows" in st.session_state:
             },
         )
 
-        if st.button("Generate a text"):
-            st.code("\n".join(df["text"]), language=None)
+        selected = event.selection.rows
+        if st.button("Generate a text", disabled=not selected):
+            st.code(df["text"].iloc[selected[0]], language=None)
