@@ -128,4 +128,8 @@ if "search_rows" in st.session_state:
 
         selected = event.selection.rows
         if st.button("Generate a text", disabled=not selected):
-            st.code(df["text"].iloc[selected[0]], language=None)
+            row = df["text"].iloc[selected[0]]
+            base = row["text"]
+            total = row["total"]
+            st.code(f"{base},{total:.2f}", language=None)
+            
